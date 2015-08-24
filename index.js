@@ -243,14 +243,22 @@ InfluxDB.prototype.dropUser = function (username, callback) {
   this.queryDB('drop user "' + username + '"', callback)
 }
 
-InfluxDB.prototype._createKeyValueString = function (object) {
+InfluxDB.prototype._createMeasureValue = function (value, options) {
+  if (typeof value === 'string') {
+    return "' + value + '"
+  } else {
+    var intValue = (typeof(value) == 'number') && (parseInt(value, 10) == parseFloat(value));
+    if (intValue && options && options.valueFloat)
+      return value + '.0'
+    else
+      return value
+  }
+}
+
+InfluxDB.prototype._createKeyValueString = function (object, options) {
   return _.map(object, function (value, key) {
-    if (typeof value === 'string') {
-      return key + '="' + value + '"'
-    } else {
-      return key + '=' + value
-    }
-  }).join(',')
+    return key + '=' + this._createMeasureValue(value, options);
+  }, this).join(',')
 }
 
 InfluxDB.prototype._createKeyTagString = function (object) {
@@ -259,7 +267,7 @@ InfluxDB.prototype._createKeyTagString = function (object) {
   }).join(',')
 }
 
-InfluxDB.prototype._prepareValues = function (series) {
+InfluxDB.prototype._prepareValues = function (series, options) {
   var output = []
   _.forEach(series, function (values, seriesName) {
     _.each(values, function (points) {
@@ -274,7 +282,7 @@ InfluxDB.prototype._prepareValues = function (series) {
           timestamp = points[0].time
           delete (points[0].time)
         }
-        line += ' ' + this._createKeyValueString(points[0])
+        line += ' ' + this._createKeyValueString(points[0], options)
         if (timestamp) {
           if (timestamp instanceof Date) {
             line += ' ' + timestamp.getTime()
@@ -283,11 +291,7 @@ InfluxDB.prototype._prepareValues = function (series) {
           }
         }
       } else {
-        if (typeof points[0] === 'string') {
-          line += ' value="' + points[0] + '"'
-        } else {
-          line += ' value=' + points[0]
-        }
+        line += this._createMeasureValue(points[0], options);
       }
       output.push(line)
     }, this)
@@ -312,7 +316,7 @@ InfluxDB.prototype.writeSeries = function (series, options, callback) {
   this.request.post({
     url: this.url('write', options),
     pool: typeof options.pool !== 'undefined' ? options.pool : {},
-    body: this._prepareValues(series)
+    body: this._prepareValues(series, options)
   }, this._parseCallback(callback))
 }
 
