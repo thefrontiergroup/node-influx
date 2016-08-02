@@ -1,5 +1,5 @@
 {
-  "name": "influx",
+  "name": "tfg-influx",
   "version": "4.0.1",
   "description": "InfluxDB Client",
   "main": "index.js",
