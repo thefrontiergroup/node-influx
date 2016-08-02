@@ -1,7 +1,7 @@
 {
-  "name": "influx",
+  "name": "influx-tfg",
   "version": "4.0.1",
-  "description": "InfluxDB Client",
+  "description": "InfluxDB Client Internal TFG Fork",
   "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha -R dot",
